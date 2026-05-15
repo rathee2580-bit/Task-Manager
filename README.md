@@ -10,6 +10,26 @@ RBAC-focused task manager built with Next.js App Router, Prisma, PostgreSQL, Tai
 4. Run `npx prisma migrate dev`.
 5. Run `npm run dev`.
 
+## Render Deployment
+
+This repo includes `render.yaml` for a Render Blueprint deployment.
+
+1. Push the repo to GitHub.
+2. In Render, create a new Blueprint from this repo.
+3. Render will create the web service and PostgreSQL database.
+4. After the first deploy, open the Render service shell and run:
+
+```bash
+npx prisma db push
+```
+
+The app uses these Render commands:
+
+```bash
+npm run render:build
+npm run render:start
+```
+
 ## Routes
 
 - `POST /api/auth/signup`
