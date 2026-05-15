@@ -5,6 +5,7 @@ import { setAuthCookie, signAuthToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
 import { validationError } from "@/lib/http";
 import { corsPreflight, withCors } from "@/lib/cors";
+import { requireServerConfig } from "@/lib/env";
 
 export function OPTIONS() {
   return corsPreflight();
@@ -12,6 +13,7 @@ export function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    requireServerConfig();
     const input = loginSchema.parse(await request.json());
     const user = await prisma.user.findUnique({ where: { email: input.email } });
     if (!user || !(await bcrypt.compare(input.password, user.password))) {

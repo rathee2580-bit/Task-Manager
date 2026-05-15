@@ -5,6 +5,7 @@ import { setAuthCookie, signAuthToken } from "@/lib/auth";
 import { signupSchema } from "@/lib/validation";
 import { validationError } from "@/lib/http";
 import { corsPreflight, withCors } from "@/lib/cors";
+import { requireServerConfig } from "@/lib/env";
 
 export function OPTIONS() {
   return corsPreflight();
@@ -12,6 +13,7 @@ export function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    requireServerConfig();
     const input = signupSchema.parse(await request.json());
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
     if (existing) {

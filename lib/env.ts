@@ -14,3 +14,13 @@ export function getSetupStatus() {
     jwtSecret: Boolean(process.env.JWT_SECRET)
   };
 }
+
+export function requireServerConfig() {
+  const missing = Object.entries(getSetupStatus())
+    .filter(([, configured]) => !configured)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required server configuration: ${missing.join(", ")}`);
+  }
+}

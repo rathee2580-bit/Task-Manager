@@ -13,7 +13,7 @@ export function validationError(error: unknown) {
   }
 
   if (error instanceof Error) {
-    if (error.message.startsWith("Missing required environment variable:")) {
+    if (error.message.startsWith("Missing required environment variable:") || error.message.startsWith("Missing required server configuration:")) {
       return {
         error: "Server setup is incomplete",
         details: error.message
