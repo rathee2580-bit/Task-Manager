@@ -8,7 +8,24 @@ RBAC-focused task manager built with Next.js App Router, Prisma, PostgreSQL, Tai
 2. Set `DATABASE_URL` and `JWT_SECRET`.
 3. Run `npm install`.
 4. Run `npx prisma migrate dev`.
-5. Run `npm run dev`.
+5. Run `npm run seed`.
+6. Run `npm run dev`.
+
+## Demo Login
+
+After running `npm run seed`, use:
+
+```bash
+Admin email: admin@example.com
+Admin password: password123
+```
+
+```bash
+Member email: member@example.com
+Member password: password123
+```
+
+The admin can create projects and assign tasks. The member can see assigned tasks and update task status.
 
 ## Render Deployment
 
