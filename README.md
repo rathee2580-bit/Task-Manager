@@ -49,6 +49,17 @@ NEXT_PUBLIC_API_BASE_URL=https://your-render-service.onrender.com
 
 3. Deploy the project.
 
+In Vercel Project Settings, keep these build settings:
+
+```bash
+Framework Preset: Next.js
+Build Command: npm run vercel:build
+Output Directory: .next
+Install Command: npm install
+```
+
+Do not put a Vercel deployment URL in **Output Directory**. That field must be a folder path, not a website URL.
+
 Vercel uses:
 
 ```bash
