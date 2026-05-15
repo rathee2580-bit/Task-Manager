@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { withCors } from "@/lib/cors";
@@ -22,18 +21,20 @@ export function signAuthToken(user: AuthUser) {
   return jwt.sign(user, getJwtSecret(), { expiresIn: "7d" });
 }
 
-export function setAuthCookie(token: string) {
-  cookies().set(cookieName, token, {
+export function setAuthCookie(response: NextResponse, token: string) {
+  response.cookies.set(cookieName, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7
   });
+  return response;
 }
 
-export function clearAuthCookie() {
-  cookies().delete(cookieName);
+export function clearAuthCookie(response: NextResponse) {
+  response.cookies.delete(cookieName);
+  return response;
 }
 
 export function getUserFromRequest(request: NextRequest): AuthUser | null {

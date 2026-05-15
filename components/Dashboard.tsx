@@ -66,8 +66,26 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     }
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "Request failed");
+  if (!response.ok) throw new Error(formatApiError(payload));
   return payload as T;
+}
+
+function formatApiError(payload: { error?: string; details?: unknown }) {
+  if (payload.details && typeof payload.details === "object") {
+    const messages = Object.entries(payload.details)
+      .flatMap(([field, value]) => {
+        if (Array.isArray(value)) return value.map((message) => `${field}: ${message}`);
+        if (typeof value === "string") return `${field}: ${value}`;
+        return [];
+      })
+      .filter(Boolean);
+
+    if (messages.length > 0) return messages.join("; ");
+  }
+
+  if (typeof payload.details === "string") return `${payload.error || "Request failed"}: ${payload.details}`;
+
+  return payload.error || "Request failed";
 }
 
 export function Dashboard() {

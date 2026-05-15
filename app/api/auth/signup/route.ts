@@ -24,8 +24,9 @@ export async function POST(request: NextRequest) {
     });
 
     const token = signAuthToken(user);
-    setAuthCookie(token);
-    return withCors(NextResponse.json({ user, token }, { status: 201 }));
+    const response = NextResponse.json({ user, token }, { status: 201 });
+    setAuthCookie(response, token);
+    return withCors(response);
   } catch (error) {
     return withCors(NextResponse.json(validationError(error), { status: 400 }));
   }

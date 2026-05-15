@@ -7,6 +7,7 @@ export function OPTIONS() {
 }
 
 export async function POST() {
-  clearAuthCookie();
-  return withCors(NextResponse.json({ ok: true }));
+  const response = NextResponse.json({ ok: true });
+  clearAuthCookie(response);
+  return withCors(response);
 }
