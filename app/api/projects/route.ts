@@ -4,6 +4,11 @@ import { authorize } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validationError } from "@/lib/http";
 import { projectSchema } from "@/lib/validation";
+import { corsPreflight, withCors } from "@/lib/cors";
+
+export function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function GET(request: NextRequest) {
   const { user, response } = authorize(request);
@@ -15,7 +20,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" }
   });
 
-  return NextResponse.json({ projects });
+  return withCors(NextResponse.json({ projects }));
 }
 
 export async function POST(request: NextRequest) {
@@ -25,8 +30,8 @@ export async function POST(request: NextRequest) {
   try {
     const input = projectSchema.parse(await request.json());
     const project = await prisma.project.create({ data: { ...input, ownerId: user.id } });
-    return NextResponse.json({ project }, { status: 201 });
+    return withCors(NextResponse.json({ project }, { status: 201 }));
   } catch (error) {
-    return NextResponse.json(validationError(error), { status: 400 });
+    return withCors(NextResponse.json(validationError(error), { status: 400 }));
   }
 }

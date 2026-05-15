@@ -4,6 +4,11 @@ import { authorize } from "@/lib/auth";
 import { validationError } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { taskSchema, taskStatusSchema } from "@/lib/validation";
+import { corsPreflight, withCors } from "@/lib/cors";
+
+export function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function GET(request: NextRequest) {
   const { user, response } = authorize(request);
@@ -18,7 +23,7 @@ export async function GET(request: NextRequest) {
     orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }]
   });
 
-  return NextResponse.json({ tasks });
+  return withCors(NextResponse.json({ tasks }));
 }
 
 export async function POST(request: NextRequest) {
@@ -28,18 +33,18 @@ export async function POST(request: NextRequest) {
   try {
     const input = taskSchema.parse(await request.json());
     const project = await prisma.project.findFirst({ where: { id: input.projectId, ownerId: user.id } });
-    if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    if (!project) return withCors(NextResponse.json({ error: "Project not found" }, { status: 404 }));
 
     const assignee = await prisma.user.findUnique({ where: { id: input.assigneeId }, select: { id: true } });
-    if (!assignee) return NextResponse.json({ error: "Assignee not found" }, { status: 404 });
+    if (!assignee) return withCors(NextResponse.json({ error: "Assignee not found" }, { status: 404 }));
 
     const task = await prisma.task.create({
       data: { ...input, dueDate: new Date(input.dueDate) }
     });
 
-    return NextResponse.json({ task }, { status: 201 });
+    return withCors(NextResponse.json({ task }, { status: 201 }));
   } catch (error) {
-    return NextResponse.json(validationError(error), { status: 400 });
+    return withCors(NextResponse.json(validationError(error), { status: 400 }));
   }
 }
 
@@ -48,7 +53,7 @@ export async function PATCH(request: NextRequest) {
   if (response || !user) return response;
 
   const taskId = request.nextUrl.searchParams.get("id");
-  if (!taskId) return NextResponse.json({ error: "Task id is required" }, { status: 400 });
+  if (!taskId) return withCors(NextResponse.json({ error: "Task id is required" }, { status: 400 }));
 
   try {
     const input = taskStatusSchema.parse(await request.json());
@@ -56,14 +61,14 @@ export async function PATCH(request: NextRequest) {
       where: { id: taskId },
       include: { project: { select: { ownerId: true } } }
     });
-    if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    if (!task) return withCors(NextResponse.json({ error: "Task not found" }, { status: 404 }));
 
     const canUpdate = user.role === "ADMIN" ? task.project.ownerId === user.id : task.assigneeId === user.id;
-    if (!canUpdate) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!canUpdate) return withCors(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
 
     const updated = await prisma.task.update({ where: { id: taskId }, data: { status: input.status } });
-    return NextResponse.json({ task: updated });
+    return withCors(NextResponse.json({ task: updated }));
   } catch (error) {
-    return NextResponse.json(validationError(error), { status: 400 });
+    return withCors(NextResponse.json(validationError(error), { status: 400 }));
   }
 }

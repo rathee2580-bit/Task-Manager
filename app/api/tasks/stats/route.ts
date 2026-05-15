@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorize } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { corsPreflight, withCors } from "@/lib/cors";
+
+export function OPTIONS() {
+  return corsPreflight();
+}
 
 export async function GET(request: NextRequest) {
   const { user, response } = authorize(request);
@@ -24,12 +29,12 @@ export async function GET(request: NextRequest) {
     })
   ]);
 
-  return NextResponse.json({
+  return withCors(NextResponse.json({
     total,
     byStatus: byStatus.reduce<Record<string, number>>((acc, item) => {
       acc[item.status] = item._count.id;
       return acc;
     }, {}),
     overdue
-  });
+  }));
 }

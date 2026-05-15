@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
+import { withCors } from "@/lib/cors";
 
 export type AuthUser = {
   id: string;
@@ -51,11 +52,17 @@ export function getUserFromRequest(request: NextRequest): AuthUser | null {
 export function authorize(request: NextRequest, roles: Role[] = []) {
   const user = getUserFromRequest(request);
   if (!user) {
-    return { user: null, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+    return {
+      user: null,
+      response: withCors(NextResponse.json({ error: "Unauthorized" }, { status: 401 }))
+    };
   }
 
   if (roles.length > 0 && !roles.includes(user.role)) {
-    return { user, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+    return {
+      user,
+      response: withCors(NextResponse.json({ error: "Forbidden" }, { status: 403 }))
+    };
   }
 
   return { user, response: null };

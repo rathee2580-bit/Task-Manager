@@ -7,6 +7,7 @@
     "build": "next build",
     "render:build": "prisma generate && next build",
     "render:start": "next start -p $PORT",
+    "vercel:build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

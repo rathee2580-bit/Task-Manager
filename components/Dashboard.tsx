@@ -35,10 +35,35 @@ const statusLabels: Record<TaskStatus, string> = {
   DONE: "Done"
 };
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "";
+const tokenStorageKey = "team_task_token";
+
+function apiUrl(path: string) {
+  return `${apiBaseUrl}${path}`;
+}
+
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(tokenStorageKey);
+}
+
+function setStoredToken(token: string) {
+  window.localStorage.setItem(tokenStorageKey, token);
+}
+
+function clearStoredToken() {
+  window.localStorage.removeItem(tokenStorageKey);
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const token = getStoredToken();
   const response = await fetch(url, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers }
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers
+    }
   });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Request failed");
@@ -61,17 +86,17 @@ export function Dashboard() {
   async function loadDashboard() {
     setLoading(true);
     try {
-      const me = await requestJson<{ user: User }>("/api/auth/me");
+      const me = await requestJson<{ user: User }>(apiUrl("/api/auth/me"));
       const [taskData, statData, projectData] = await Promise.all([
-        requestJson<{ tasks: Task[] }>("/api/tasks"),
-        requestJson<Stats>("/api/tasks/stats"),
-        requestJson<{ projects: Project[] }>("/api/projects")
+        requestJson<{ tasks: Task[] }>(apiUrl("/api/tasks")),
+        requestJson<Stats>(apiUrl("/api/tasks/stats")),
+        requestJson<{ projects: Project[] }>(apiUrl("/api/projects"))
       ]);
       setUser(me.user);
       setTasks(taskData.tasks);
       setStats(statData);
       setProjects(projectData.projects);
-      setUsers(me.user.role === "ADMIN" ? (await requestJson<{ users: User[] }>("/api/users")).users : []);
+      setUsers(me.user.role === "ADMIN" ? (await requestJson<{ users: User[] }>(apiUrl("/api/users"))).users : []);
     } catch {
       setUser(null);
     } finally {
@@ -93,7 +118,11 @@ export function Dashboard() {
     setMessage("");
     const body = mode === "login" ? { email: authForm.email, password: authForm.password } : authForm;
     try {
-      await requestJson(`/api/auth/${mode}`, { method: "POST", body: JSON.stringify(body) });
+      const auth = await requestJson<{ user: User; token: string }>(apiUrl(`/api/auth/${mode}`), {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
+      setStoredToken(auth.token);
       await loadDashboard();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Authentication failed");
@@ -104,7 +133,7 @@ export function Dashboard() {
     event.preventDefault();
     setMessage("");
     try {
-      await requestJson("/api/projects", { method: "POST", body: JSON.stringify(projectForm) });
+      await requestJson(apiUrl("/api/projects"), { method: "POST", body: JSON.stringify(projectForm) });
       setProjectForm({ title: "", description: "" });
       await loadDashboard();
     } catch (error) {
@@ -116,7 +145,7 @@ export function Dashboard() {
     event.preventDefault();
     setMessage("");
     try {
-      await requestJson("/api/tasks", {
+      await requestJson(apiUrl("/api/tasks"), {
         method: "POST",
         body: JSON.stringify({ ...taskForm, dueDate: new Date(taskForm.dueDate).toISOString() })
       });
@@ -128,12 +157,13 @@ export function Dashboard() {
   }
 
   async function updateTaskStatus(taskId: string, status: TaskStatus) {
-    await requestJson(`/api/tasks?id=${taskId}`, { method: "PATCH", body: JSON.stringify({ status }) });
+    await requestJson(apiUrl(`/api/tasks?id=${taskId}`), { method: "PATCH", body: JSON.stringify({ status }) });
     await loadDashboard();
   }
 
   async function logout() {
-    await requestJson("/api/auth/logout", { method: "POST" });
+    await requestJson(apiUrl("/api/auth/logout"), { method: "POST" });
+    clearStoredToken();
     setUser(null);
     setTasks([]);
     setProjects([]);
@@ -246,7 +276,7 @@ export function Dashboard() {
                       <article key={task.id} className="rounded-md border border-slate-200 p-3">
                         <h4 className="font-medium text-ink">{task.title}</h4>
                         <p className="mt-2 text-sm text-slate-600">{task.project.title}</p>
-                        <p className="mt-1 text-sm text-slate-500">{new Date(task.dueDate).toLocaleString()} · {task.assignee.name}</p>
+                        <p className="mt-1 text-sm text-slate-500">{new Date(task.dueDate).toLocaleString()} - {task.assignee.name}</p>
                         <select className="mt-3 w-full rounded-md border border-slate-300 px-2 py-2 text-sm" value={task.status} onChange={(event) => updateTaskStatus(task.id, event.target.value as TaskStatus)}>
                           <option value="TODO">To do</option>
                           <option value="IN_PROGRESS">In progress</option>
@@ -266,7 +296,7 @@ export function Dashboard() {
               {stats.overdue.map((task) => (
                 <div key={task.id} className="rounded-md border border-red-100 bg-red-50 p-3">
                   <p className="font-medium text-ink">{task.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{task.project.title} · {task.assignee.name}</p>
+                  <p className="mt-1 text-sm text-slate-600">{task.project.title} - {task.assignee.name}</p>
                   <p className="mt-1 text-sm text-coral">{new Date(task.dueDate).toLocaleString()}</p>
                 </div>
               ))}

@@ -30,6 +30,33 @@ npm run render:build
 npm run render:start
 ```
 
+Set this Render environment variable after your Vercel frontend is deployed:
+
+```bash
+FRONTEND_URL=https://your-vercel-app.vercel.app
+```
+
+## Vercel Frontend Deployment
+
+This repo includes `vercel.json` for Vercel.
+
+1. Import the GitHub repo into Vercel.
+2. Add this environment variable in Vercel:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-render-service.onrender.com
+```
+
+3. Deploy the project.
+
+Vercel uses:
+
+```bash
+npm run vercel:build
+```
+
+For local full-stack development, leave `NEXT_PUBLIC_API_BASE_URL` empty so the frontend calls the local Next.js API routes.
+
 ## Routes
 
 - `POST /api/auth/signup`
