@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { withCors } from "@/lib/cors";
+import { requireEnv } from "@/lib/env";
 
 export type AuthUser = {
   id: string;
@@ -14,9 +15,7 @@ export type AuthUser = {
 const cookieName = "team_task_token";
 
 function getJwtSecret() {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is not configured");
-  return secret;
+  return requireEnv("JWT_SECRET");
 }
 
 export function signAuthToken(user: AuthUser) {
